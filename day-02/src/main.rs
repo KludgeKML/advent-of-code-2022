@@ -14,12 +14,17 @@ enum RPSOutcome {
     Draw,
 }
 
+struct RPSGameRequirement {
+    opponent: RPSMove,
+    outcome: RPSOutcome,
+}
+
 struct RPSGame {
     opponent: RPSMove,
     you: RPSMove,
 }
 
-fn get_game_from_input(opponent: &str, you: &str) -> RPSGame {
+fn get_required_game_from_input(opponent: &str, outcome: &str) -> RPSGameRequirement {
 
     let opponent_mv = match opponent {
         "A" => RPSMove::Rock,
@@ -28,16 +33,16 @@ fn get_game_from_input(opponent: &str, you: &str) -> RPSGame {
         &_ => todo!(),
     };
 
-    let you_mv = match you {
-        "X" => RPSMove::Rock,
-        "Y" => RPSMove::Paper,
-        "Z" => RPSMove::Scissors,
+    let req_outcome = match outcome {
+        "X" => RPSOutcome::Loss,
+        "Y" => RPSOutcome::Draw,
+        "Z" => RPSOutcome::Win,
         &_ => todo!(),
     };  
 
-    RPSGame{
+    RPSGameRequirement{
         opponent: opponent_mv,
-        you: you_mv,
+        outcome: req_outcome,
     }
 }
 
@@ -57,6 +62,31 @@ fn get_score_from_game(game: &RPSGame) -> u8 {
     };
 
     score
+}
+
+fn make_game(req_game: RPSGameRequirement) -> RPSGame {
+    let you_mv = match req_game.outcome {
+        RPSOutcome::Draw => match req_game.opponent {
+            RPSMove::Rock => RPSMove::Rock,
+            RPSMove::Paper => RPSMove::Paper,
+            RPSMove::Scissors => RPSMove::Scissors,
+        },
+        RPSOutcome::Win => match req_game.opponent {
+            RPSMove::Rock => RPSMove::Paper,
+            RPSMove::Paper => RPSMove::Scissors,
+            RPSMove::Scissors => RPSMove::Rock,
+        },
+        RPSOutcome::Loss => match req_game.opponent {
+            RPSMove::Rock => RPSMove::Scissors,
+            RPSMove::Paper => RPSMove::Rock,
+            RPSMove::Scissors => RPSMove::Paper,
+        },
+    };
+
+    RPSGame {
+        opponent: req_game.opponent,
+        you: you_mv,
+    }
 }
 
 fn get_outcome_from_game(game: &RPSGame) -> RPSOutcome {
@@ -91,7 +121,8 @@ fn main() {
     for line_result in buffered.lines() {
         let line = line_result.unwrap();
         let v = line.split(" ").collect::<Vec<_>>();
-        let game = get_game_from_input(v[0], v[1]);
+        let req_game = get_required_game_from_input(v[0], v[1]);
+        let game = make_game(req_game);
         total_score += i32::from(get_score_from_game(&game));
     }
 
